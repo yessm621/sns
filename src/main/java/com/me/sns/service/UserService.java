@@ -43,7 +43,6 @@ public class UserService {
         return User.fromEntity(userEntity);
     }
 
-    // TODO : implement
     public String login(String userName, String password) {
         // 회원가입 여부 체크
         UserEntity userEntity = userEntityRepository.findByUserName(userName)
