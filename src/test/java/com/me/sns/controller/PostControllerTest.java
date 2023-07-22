@@ -1,6 +1,7 @@
 package com.me.sns.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.me.sns.controller.request.PostCommentRequest;
 import com.me.sns.controller.request.PostCreateRequest;
 import com.me.sns.controller.request.PostModifyRequest;
 import com.me.sns.exception.ErrorCode;
@@ -262,4 +263,44 @@ class PostControllerTest {
                 ).andDo(print())
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    @WithMockUser
+    void 댓글기능() throws Exception {
+        // 서비스 단에서 반환할 값이 없기 때문에 mocking 은 생략
+        mockMvc.perform(
+                        post("/api/v1/posts/1/comments")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsBytes(new PostCommentRequest("comment")))
+                ).andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void 댓글작성시_로그인하지_않은_경우() throws Exception {
+        when(postService.my(any(), any())).thenReturn(Page.empty());
+
+        mockMvc.perform(
+                        post("/api/v1/posts/1/comments")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsBytes(new PostCommentRequest("comment")))
+                ).andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser
+    void 댓글작성시_게시물이_없는_경우() throws Exception {
+        doThrow(new SnsApplicationException(ErrorCode.POST_NOT_FOUNT))
+                .when(postService).comment(any(), any(), any());
+
+        mockMvc.perform(
+                        post("/api/v1/posts/1/comments")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsBytes(new PostCommentRequest("comment")))
+                ).andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
 }
