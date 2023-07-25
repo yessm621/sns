@@ -35,6 +35,10 @@ public class UserController {
 
     @GetMapping("/alarm")
     public Response<Page<AlarmResponse>> alarm(Pageable pageable, Authentication authentication) {
-        return Response.success(userService.alarmList(authentication.getName(), pageable).map(AlarmResponse::fromAlarm));
+        /**
+         * TODO: 알람 조회시 이미 알고 있는 User를 다시 조회하기 때문에 DB에서 2번의 IO가 발생함. 이를 1번만 IO가 발생하도록 변경함.
+         */
+        User user = (User) authentication.getPrincipal();
+        return Response.success(userService.alarmList(user.getId(), pageable).map(AlarmResponse::fromAlarm));
     }
 }
