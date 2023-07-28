@@ -7,12 +7,15 @@ import com.me.sns.controller.response.Response;
 import com.me.sns.controller.response.UserJoinResponse;
 import com.me.sns.controller.response.UserLoginResponse;
 import com.me.sns.model.User;
+import com.me.sns.service.AlarmService;
 import com.me.sns.service.UserService;
+import com.me.sns.util.ClassUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final AlarmService alarmService;
 
     @PostMapping("/join")
     public Response<UserJoinResponse> join(@RequestBody UserJoinRequest request) {
@@ -35,10 +39,13 @@ public class UserController {
 
     @GetMapping("/alarm")
     public Response<Page<AlarmResponse>> alarm(Pageable pageable, Authentication authentication) {
-        /**
-         * TODO: 알람 조회시 이미 알고 있는 User를 다시 조회하기 때문에 DB에서 2번의 IO가 발생함. 이를 1번만 IO가 발생하도록 변경함.
-         */
-        User user = (User) authentication.getPrincipal();
+        User user = ClassUtils.getSafeCastInstance(authentication.getPrincipal(), User.class);
         return Response.success(userService.alarmList(user.getId(), pageable).map(AlarmResponse::fromAlarm));
+    }
+
+    @GetMapping("/alarm/subscribe")
+    public SseEmitter subscribe(Authentication authentication) {
+        User user = ClassUtils.getSafeCastInstance(authentication.getPrincipal(), User.class);
+        return alarmService.connectAlarm(user.getId());
     }
 }

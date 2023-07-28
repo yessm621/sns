@@ -16,9 +16,6 @@ public interface CommentEntityRepository extends JpaRepository<CommentEntity, In
 
     Page<CommentEntity> findAllByPost(PostEntity post, Pageable pageable);
 
-    /**
-     * TODO: delete를 할 때는 JPA에 있는 기본 delete를 사용하는 것보다 @Query()를 통해 삭제하도록 변경함.
-     */
     @Transactional
     @Modifying
     @Query("UPDATE CommentEntity entity SET deleted_at = NOW() where entity.post = :post")
