@@ -2,7 +2,13 @@ package com.me.sns.service;
 
 import com.me.sns.exception.ErrorCode;
 import com.me.sns.exception.SnsApplicationException;
+import com.me.sns.model.entity.AlarmArgs;
+import com.me.sns.model.entity.AlarmEntity;
+import com.me.sns.model.entity.AlarmType;
+import com.me.sns.model.entity.UserEntity;
+import com.me.sns.repository.AlarmEntityRepository;
 import com.me.sns.repository.EmitterRepository;
+import com.me.sns.repository.UserEntityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,13 +24,20 @@ public class AlarmService {
     private final static Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
     private final static String ALARM_NAME = "alarm";
     private final EmitterRepository emitterRepository;
+    private final AlarmEntityRepository alarmEntityRepository;
+    private final UserEntityRepository userEntityRepository;
 
-    public void send(Integer alarmId, Integer userId) {
-        emitterRepository.get(userId).ifPresentOrElse(sseEmitter -> {
+    public void send(AlarmType type, AlarmArgs args, Integer receiverUserId) {
+        // alarm save
+        UserEntity user = userEntityRepository.findById(receiverUserId)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND));
+        AlarmEntity alarmEntity = alarmEntityRepository.save(AlarmEntity.of(user, type, args));
+
+        emitterRepository.get(receiverUserId).ifPresentOrElse(sseEmitter -> {
             try {
-                sseEmitter.send(sseEmitter.event().id(alarmId.toString()).name(ALARM_NAME).data("new alarm"));
+                sseEmitter.send(sseEmitter.event().id(alarmEntity.getId().toString()).name(ALARM_NAME).data("new alarm"));
             } catch (IOException e) {
-                emitterRepository.delete(userId);
+                emitterRepository.delete(receiverUserId);
                 throw new SnsApplicationException(ErrorCode.ALARM_CONNECT_ERROR);
             }
         }, () -> log.info("No emitter founded"));

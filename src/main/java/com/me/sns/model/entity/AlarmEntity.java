@@ -21,7 +21,6 @@ import java.time.Instant;
 @TypeDef(name = "json", typeClass = JsonType.class)
 @SQLDelete(sql = "UPDATE \"alarm\" SET deleted_at = NOW() where id=?")
 @Where(clause = "deleted_at is NULL")
-
 public class AlarmEntity {
 
     @Id

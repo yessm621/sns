@@ -3,8 +3,8 @@ package com.me.sns.model.entity;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @Getter
+@RequiredArgsConstructor
 public enum AlarmType {
     NEW_COMMENT_ON_POST("new comment"),
     NEW_LIKE_ON_POST("new like"),
